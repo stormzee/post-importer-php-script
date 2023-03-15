@@ -8,6 +8,7 @@
 /*
 Plugin Name: CSV Post Importer
 Description: Imports posts from a CSV file.
+Developer: Samuel Addo Oppong
 */
 
 // Register the plugin activation hook
@@ -40,10 +41,10 @@ function csv_post_importer_page() {
         
 
         $post_date_cleaned = date('Y-m-d H:i:s', strtotime($post_date));
-        // Set the post status to draft
-        $post_status = 'draft';
 
-
+        // Get the selected post status from the form (default to 'draft')
+        $post_status = isset( $_POST['post_status'] ) ? sanitize_text_field( $_POST['post_status'] ) : 'draft';
+      
         // Create a new post array
         $new_post = array(
           'post_title' => $post_title,
@@ -74,6 +75,11 @@ function csv_post_importer_page() {
   echo '<h1>Import Posts from CSV</h1>';
   echo '<form method="post" enctype="multipart/form-data">';
   echo '<input type="file" name="csv_file" required>';
+  echo '<label for="post_status">Post Status:</label>';
+  echo '<select id="post_status" name="post_status">';
+  echo '<option value="draft">Draft</option>';
+  echo '<option value="publish">Publish</option>';
+  echo '</select>';
   echo '<button type="submit">Import Posts</button>';
   echo '</form>';
 }
