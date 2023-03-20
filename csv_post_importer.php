@@ -7,8 +7,9 @@
 
 /*
 Plugin Name: CSV Post Importer
-Description: Imports posts from a CSV file.
-Developer: Samuel Addo Oppong
+Description: Create posts from a CSV file
+Version: 1.0
+Author: Oppong Samuel Addo
 */
 
 // Register the plugin activation hook
@@ -30,14 +31,19 @@ function csv_post_importer_page() {
   if ( isset( $_FILES['csv_file'] ) && ! empty( $_FILES['csv_file']['tmp_name'] ) ) {
     // Open the CSV file
     if ( ( $handle = fopen( $_FILES['csv_file']['tmp_name'], 'r' ) ) !== false ) {
+		
+		$count = 0;
+		$errors = 0;
       // Loop through each row in the CSV file
       while ( ( $data = fgetcsv( $handle ) ) !== false ) {
         // Extract the data from the current row
-        $post_name = $data[0];
-        $post_content = $data[1];
-        $post_title = $data[2];
-        $post_author = $data[3];
-        $post_date = $data[4];
+        $post_title = $data[0];
+        $post_author = $data[1];
+        $post_content = $data[2];
+        $post_date = $data[3];
+        $post_image_url = $data[4];
+        $post_name = $data[5];
+        
         
 
         $post_date_cleaned = date('Y-m-d H:i:s', strtotime($post_date));
@@ -57,7 +63,40 @@ function csv_post_importer_page() {
         
         // Insert the new post into WordPress
         $post_id = wp_insert_post( $new_post );
-
+        if ( ! empty( $post_image_url ) ) {
+          $image_data = @file_get_contents( $post_image_url );
+          if ( $image_data !== false ) {
+            $filename = basename( $post_image_url );
+            $upload_file = wp_upload_bits( $filename, null, $image_data );
+            if ( $upload_file['error'] == false ) {
+              $attachment = array(
+                'post_mime_type' => $upload_file['type'],
+                'post_title' => preg_replace( '/\.[^.]+$/', '', $filename ),
+                'post_content' => '',
+                'post_status' => 'inherit',
+                'guid' => $upload_file['url']
+              );
+              $attachment_id = wp_insert_attachment( $attachment, $upload_file['file'], $post_id );
+              if ( ! is_wp_error( $attachment_id ) ) {
+                require_once( ABSPATH . 'wp-admin/includes/image.php' );
+				require_once( ABSPATH . 'wp-admin/includes/media.php');
+				require_once( ABSPATH . 'wp-admin/includes/file.php');
+                $attachment_data = wp_generate_attachment_metadata( $attachment_id, $upload_file['file'] );
+                wp_update_attachment_metadata( $attachment_id, $attachment_data );
+                set_post_thumbnail( $post_id, $attachment_id );
+              }
+            }else {
+				// Display a warning message if the image cannot be uploaded
+				echo '<div class="notice notice-warning is-dismissible"><p>Could not upload image: ' . $post_image_url . 				'</p></div>';
+			}
+          }else {
+				// Display a warning message if the image cannot be fetched
+				echo '<div class="notice notice-warning is-dismissible"><p>No image found at: ' . $post_image_url . '</p>					</div>';
+			}
+        } else {
+			// Display a warning message if no image URL is provided
+			echo '<div class="notice notice-warning is-dismissible"><p>No image URL provided for post: ' . $post_title . '</p></div>';
+		}
       }
       
       // Close the CSV file
@@ -83,4 +122,3 @@ function csv_post_importer_page() {
   echo '<button type="submit">Import Posts</button>';
   echo '</form>';
 }
-
