@@ -1,9 +1,9 @@
 <?php
 
 // Set maximum file size and time limit for file uploads
-@ini_set( 'upload_max_size' , '64M' );
-@ini_set( 'post_max_size', '64M');
-@ini_set( 'max_execution_time', '300' );
+@ini_set( 'upload_max_size' , '500M' );
+@ini_set( 'post_max_size', '500M');
+@ini_set( 'max_execution_time', '5000' );
 
 /*
 Plugin Name: CSV Post Importer
